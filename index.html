@@ -1357,45 +1357,59 @@ function setSyncStatus(s, msg) {
   el.className = 'sync-badge sync-' + s;
 }
 
+function processSheetData(data) {
+  if (!Array.isArray(data)) { setSyncStatus('error', 'Формат данных'); return; }
+  if (data.length > 0) {
+    candidates = data.map(function(c) {
+      var dates = c.dates;
+      if (typeof dates === 'string') { try { dates = JSON.parse(dates); } catch(e) { dates = {}; } }
+      return {
+        id: Number(c.id) || Math.floor(Math.random()*9000+1000),
+        name: String(c.name || ''),
+        src: String(c.src || 'hh'),
+        stage: String(c.stage || 'interview'),
+        phone: String(c.phone || ''),
+        tg: String(c.tg || ''),
+        dates: (dates && typeof dates === 'object') ? dates : {},
+        comment: String(c.comment || ''),
+        resume: null
+      };
+    });
+    var maxId = candidates.reduce(function(m,c){ return Math.max(m, Number(c.id)||0); }, 0);
+    nextId = maxId + 1;
+  }
+  setSyncStatus('ok');
+  renderAll();
+}
+
 function loadFromSheets() {
   setSyncStatus('loading');
-  fetch(SCRIPT_URL + '?t=' + Date.now(), {
-    method: 'GET',
-    redirect: 'follow'
-  })
-    .then(function(r){ return r.text(); })
-    .then(function(text) {
-      var data;
-      try { data = JSON.parse(text); } catch(e) { setSyncStatus('error', 'Ошибка данных'); return; }
-      if (data && data.error) { setSyncStatus('error', String(data.error).substring(0,30)); return; }
-      if (Array.isArray(data)) {
-        if (data.length > 0) {
-          candidates = data.map(function(c) {
-            return {
-              id: Number(c.id) || Math.floor(Math.random()*9000+1000),
-              name: c.name || '',
-              src: c.src || 'hh',
-              stage: c.stage || 'interview',
-              phone: c.phone || '',
-              tg: c.tg || '',
-              dates: (typeof c.dates === 'object' && c.dates) ? c.dates : {},
-              comment: c.comment || '',
-              resume: null
-            };
-          });
-          var maxId = candidates.reduce(function(m,c){ return Math.max(m, Number(c.id)||0); }, 0);
-          nextId = maxId + 1;
-        }
-        setSyncStatus('ok');
-        renderAll();
-      } else {
-        setSyncStatus('error', 'Нет данных');
-      }
-    })
-    .catch(function(err) {
-      setSyncStatus('error', 'Нет связи');
-      console.error('Sheets error:', err);
-    });
+  // Try fetch first, fallback to script tag (for Safari CORS issues)
+  var url = SCRIPT_URL + '?callback=sheetsCallback&t=' + Date.now();
+  
+  // JSONP approach - works in all browsers without CORS issues
+  window.sheetsCallback = function(data) {
+    processSheetData(data);
+    // cleanup
+    var old = document.getElementById('sheets-jsonp');
+    if (old) old.remove();
+  };
+  
+  var script = document.createElement('script');
+  script.id = 'sheets-jsonp';
+  script.src = url;
+  script.onerror = function() {
+    // fallback to regular fetch
+    fetch(SCRIPT_URL + '?t=' + Date.now())
+      .then(function(r){ return r.text(); })
+      .then(function(text) {
+        var data; try { data = JSON.parse(text); } catch(e) { setSyncStatus('error','Ошибка данных'); return; }
+        processSheetData(data);
+      })
+      .catch(function(err) { setSyncStatus('error','Нет связи'); });
+    this.remove();
+  };
+  document.head.appendChild(script);
 }
 
 function saveToSheets() {
@@ -1528,10 +1542,14 @@ function saveAndRender() {
 
 // ── INIT ──
 renderHdrRight('funnel');
-document.getElementById('dFrom').value = '';
-document.getElementById('dTo').value = '';
+// Ensure date filters are empty so ALL candidates show
+var dFromEl = document.getElementById('dFrom');
+var dToEl = document.getElementById('dTo');
+if (dFromEl) dFromEl.value = '';
+if (dToEl) dToEl.value = '';
 renderAll();
-loadFromSheets();
+// Load from Google Sheets
+setTimeout(loadFromSheets, 500);
 </script>
 </body>
 </html>
