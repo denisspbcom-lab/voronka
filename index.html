@@ -1344,17 +1344,19 @@ document.getElementById('modOv').addEventListener('click',e=>{if(e.target===e.cu
 document.getElementById('confOv').addEventListener('click',e=>{if(e.target===e.currentTarget)closeConf();});
 
 // ── GOOGLE SHEETS SYNC ──
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzxYE6bzbS-PTudY-lqJalaphsktORkM5BiyvcGm5SukR8ifCYc2ia8DEcl4Z1DdTaB/exec';
-var syncStatus = 'idle'; // idle | loading | saving | error | ok
+var GS_URL = 'https://script.google.com/macros/s/AKfycbzxYE6bzbS-PTudY-lqJalaphsktORkM5BiyvcGm5SukR8ifCYc2ia8DEcl4Z1DdTaB/exec';
+var syncStatus = 'idle';
+var saveTimer = null;
 
 function setSyncStatus(s, msg) {
   syncStatus = s;
-  var el = document.getElementById('syncStatus');
-  if (!el) return;
   var icons = {loading:'⏳', saving:'💾', ok:'✅', error:'❌', idle:'☁️'};
-  var labels = {loading:'Загрузка...', saving:'Сохранение...', ok:'Сохранено', error:'Ошибка синхронизации', idle:'Облако'};
-  el.textContent = (icons[s]||'') + ' ' + (msg || labels[s] || s);
-  el.className = 'sync-badge sync-' + s;
+  var labels = {loading:'Загрузка...', saving:'Сохранение...', ok:'Сохранено', error:'Ошибка', idle:'Облако'};
+  var txt = (icons[s]||'') + ' ' + (msg || labels[s] || s);
+  ['syncStatus','syncStatus2'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) { el.textContent = txt; el.className = 'sync-badge sync-' + s; }
+  });
 }
 
 function processSheetData(data) {
@@ -1384,84 +1386,48 @@ function processSheetData(data) {
 
 function loadFromSheets() {
   setSyncStatus('loading');
-  // Try fetch first, fallback to script tag (for Safari CORS issues)
-  var url = SCRIPT_URL + '?callback=sheetsCallback&t=' + Date.now();
-  
-  // JSONP approach - works in all browsers without CORS issues
-  window.sheetsCallback = function(data) {
-    processSheetData(data);
-    // cleanup
-    var old = document.getElementById('sheets-jsonp');
+  window._gsCallback = function(data) {
+    window._gsCallback = null;
+    var old = document.getElementById('gs-jsonp');
     if (old) old.remove();
+    processSheetData(data);
   };
-  
-  var script = document.createElement('script');
-  script.id = 'sheets-jsonp';
-  script.src = url;
-  script.onerror = function() {
-    // fallback to regular fetch
-    fetch(SCRIPT_URL + '?t=' + Date.now())
-      .then(function(r){ return r.text(); })
-      .then(function(text) {
-        var data; try { data = JSON.parse(text); } catch(e) { setSyncStatus('error','Ошибка данных'); return; }
-        processSheetData(data);
-      })
-      .catch(function(err) { setSyncStatus('error','Нет связи'); });
+  var s = document.createElement('script');
+  s.id = 'gs-jsonp';
+  s.src = GS_URL + '?callback=_gsCallback&t=' + Date.now();
+  s.onerror = function() {
     this.remove();
+    setSyncStatus('error', 'Нет связи');
   };
-  document.head.appendChild(script);
+  document.head.appendChild(s);
 }
 
 function saveToSheets() {
   setSyncStatus('saving');
-  fetch(SCRIPT_URL, {
+  fetch(GS_URL, {
     method: 'POST',
-    body: JSON.stringify({ action: 'save', candidates: candidates })
+    body: JSON.stringify({action:'save', candidates:candidates})
   })
-    .then(function(r){ return r.json(); })
-    .then(function(d) {
-      setSyncStatus(d.ok ? 'ok' : 'error');
-    })
-    .catch(function(err) { setSyncStatus('error', 'Нет связи'); });
+  .then(function(r){ return r.json(); })
+  .then(function(d){ setSyncStatus(d.ok ? 'ok' : 'error'); })
+  .catch(function(){ setSyncStatus('error','Нет связи'); });
 }
 
-// Auto-save after any data change
-var saveTimer = null;
 function scheduleSave() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveToSheets, 1200);
+  saveTimer = setTimeout(saveToSheets, 1500);
 }
 
-// Patch renderAll to trigger save
-var _origRenderAll = renderAll;
-function renderAll() {
-  renderTopStats();
-  renderKanban();
-  var f=document.getElementById('dFrom').value, t=document.getElementById('dTo').value;
-  var el=document.getElementById('dRes');
-  if(f||t){el.innerHTML='Показано: <span>'+getFiltered().length+'</span> кандидатов';}
-  else el.innerHTML='';
-}
+// Hook save into data mutations
+var _origSaveCandidate = saveCandidate;
+saveCandidate = function() { _origSaveCandidate(); scheduleSave(); };
 
-// Wrap data-mutating functions to auto-save
-var _origSave = saveCandidate;
-function saveCandidate() {
-  _origSave();
-  scheduleSave();
-}
 var _origConfirmDel = confirmDel;
-function confirmDel() {
-  _origConfirmDel();
-  scheduleSave();
-}
-var _origMoveCandidate = moveCandidate;
-function moveCandidate(id, newStage) {
-  _origMoveCandidate(id, newStage);
-  scheduleSave();
-}
+confirmDel = function() { _origConfirmDel(); scheduleSave(); };
 
-// ── SYNC WITH GOOGLE SHEETS ──
-const GS_URL = 'https://script.google.com/macros/s/AKfycbzxYE6bzbS-PTudY-lqJalaphsktORkM5BiyvcGm5SukR8ifCYc2ia8DEcl4Z1DdTaB/exec';
+var _origMoveCandidate = moveCandidate;
+moveCandidate = function(id, stage) { _origMoveCandidate(id, stage); scheduleSave(); };
+
 // ── INIT ──
 renderHdrRight('funnel');
 // Ensure date filters are empty so ALL candidates show
