@@ -969,7 +969,7 @@ function moveCandidate(id,newStage){
   if(!c.dates)c.dates={interview:'',welcome:'',training:'',attest_hr:'',attest_chef:'',hired:''};
   c.dates[newStage]=today;
   c.stage=newStage;
-  saveAndRender();
+  renderAll();_scheduleSave();
   // Flash notification
   showMoveToast(c.name,STAGES.find(s=>s.id===newStage)?.label,today);
 }
@@ -1305,7 +1305,7 @@ function saveCandidate(){
       candidates[i]={...candidates[i],...obj,dates:mergedDates};
     }
   } else candidates.push({id:nextId++,...obj});
-  closeModal();saveAndRender();
+  closeModal();renderAll();_scheduleSave();
 }
 
 function handleResume(input){
@@ -1338,7 +1338,7 @@ function askDel(id){
   document.getElementById('confOv').classList.add('open');
 }
 function closeConf(){document.getElementById('confOv').classList.remove('open');delId=null;}
-function confirmDel(){if(delId)candidates=candidates.filter(c=>c.id!==delId);closeConf();saveAndRender();}
+function confirmDel(){if(delId)candidates=candidates.filter(c=>c.id!==delId);closeConf();renderAll();_scheduleSave();}
 
 document.getElementById('modOv').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
 document.getElementById('confOv').addEventListener('click',e=>{if(e.target===e.currentTarget)closeConf();});
@@ -1402,13 +1402,7 @@ function _scheduleSave() {
   _saveTimer = setTimeout(_saveToSheets, 1500);
 }
 
-// Patch save points
-var _sc = saveCandidate;
-saveCandidate = function(){ _sc(); _scheduleSave(); };
-var _cd = confirmDel;
-confirmDel = function(){ _cd(); _scheduleSave(); };
-var _mc = moveCandidate;
-moveCandidate = function(id,st){ _mc(id,st); _scheduleSave(); };
+// Auto-save is called directly inside saveCandidate, confirmDel, moveCandidate
 
 // ── INIT ──
 renderHdrRight('funnel');
