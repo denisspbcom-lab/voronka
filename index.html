@@ -1345,99 +1345,77 @@ document.getElementById('confOv').addEventListener('click',e=>{if(e.target===e.c
 
 // ── GOOGLE SHEETS SYNC ──
 var GS_URL = 'https://script.google.com/macros/s/AKfycbzxYE6bzbS-PTudY-lqJalaphsktORkM5BiyvcGm5SukR8ifCYc2ia8DEcl4Z1DdTaB/exec';
-var syncStatus = 'idle';
-var saveTimer = null;
+var _saveTimer = null;
 
-function setSyncStatus(s, msg) {
-  syncStatus = s;
+function _setBadge(s, msg) {
   var icons = {loading:'⏳', saving:'💾', ok:'✅', error:'❌', idle:'☁️'};
   var labels = {loading:'Загрузка...', saving:'Сохранение...', ok:'Сохранено', error:'Ошибка', idle:'Облако'};
-  var txt = (icons[s]||'') + ' ' + (msg || labels[s] || s);
-  ['syncStatus','syncStatus2'].forEach(function(id){
-    var el = document.getElementById(id);
-    if (el) { el.textContent = txt; el.className = 'sync-badge sync-' + s; }
-  });
-}
-
-function processSheetData(data) {
-  if (!Array.isArray(data)) { setSyncStatus('error', 'Формат данных'); return; }
-  if (data.length > 0) {
-    candidates = data.map(function(c) {
-      var dates = c.dates;
-      if (typeof dates === 'string') { try { dates = JSON.parse(dates); } catch(e) { dates = {}; } }
-      return {
-        id: Number(c.id) || Math.floor(Math.random()*9000+1000),
-        name: String(c.name || ''),
-        src: String(c.src || 'hh'),
-        stage: String(c.stage || 'interview'),
-        phone: String(c.phone || ''),
-        tg: String(c.tg || ''),
-        dates: (dates && typeof dates === 'object') ? dates : {},
-        comment: String(c.comment || ''),
-        resume: null
-      };
-    });
-    var maxId = candidates.reduce(function(m,c){ return Math.max(m, Number(c.id)||0); }, 0);
-    nextId = maxId + 1;
-  }
-  setSyncStatus('ok');
-  renderAll();
+  var txt = (icons[s]||'☁️') + ' ' + (msg || labels[s] || s);
+  var el = document.getElementById('syncStatus');
+  if (el) { el.textContent = txt; el.className = 'sync-badge sync-' + s; }
 }
 
 function loadFromSheets() {
-  setSyncStatus('loading');
-  window._gsCallback = function(data) {
-    window._gsCallback = null;
-    var old = document.getElementById('gs-jsonp');
+  _setBadge('loading');
+  var cbName = '_cb' + Date.now();
+  window[cbName] = function(data) {
+    delete window[cbName];
+    var old = document.getElementById('_jsonp');
     if (old) old.remove();
-    processSheetData(data);
+    if (!Array.isArray(data)) { _setBadge('error'); return; }
+    if (data.length > 0) {
+      candidates = data.map(function(c) {
+        var d = c.dates;
+        if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) { d = {}; } }
+        return {
+          id: Number(c.id) || (Date.now() + Math.random()),
+          name: c.name || '', src: c.src || 'hh', stage: c.stage || 'interview',
+          phone: c.phone || '', tg: c.tg || '',
+          dates: (d && typeof d === 'object') ? d : {},
+          comment: c.comment || '', resume: null
+        };
+      });
+      var mx = 0;
+      candidates.forEach(function(c){ if(Number(c.id)>mx) mx=Number(c.id); });
+      nextId = mx + 1;
+    }
+    _setBadge('ok');
+    renderAll();
   };
   var s = document.createElement('script');
-  s.id = 'gs-jsonp';
-  s.src = GS_URL + '?callback=_gsCallback&t=' + Date.now();
-  s.onerror = function() {
-    this.remove();
-    setSyncStatus('error', 'Нет связи');
-  };
+  s.id = '_jsonp';
+  s.onerror = function() { this.remove(); _setBadge('error','Нет связи'); };
+  s.src = GS_URL + '?callback=' + cbName + '&t=' + Date.now();
   document.head.appendChild(s);
 }
 
-function saveToSheets() {
-  setSyncStatus('saving');
-  fetch(GS_URL, {
-    method: 'POST',
-    body: JSON.stringify({action:'save', candidates:candidates})
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(d){ setSyncStatus(d.ok ? 'ok' : 'error'); })
-  .catch(function(){ setSyncStatus('error','Нет связи'); });
+function _saveToSheets() {
+  _setBadge('saving');
+  fetch(GS_URL, {method:'POST', body: JSON.stringify({action:'save', candidates:candidates})})
+    .then(function(r){ return r.json(); })
+    .then(function(d){ _setBadge(d.ok ? 'ok' : 'error'); })
+    .catch(function(){ _setBadge('error','Нет связи'); });
 }
 
-function scheduleSave() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveToSheets, 1500);
+function _scheduleSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(_saveToSheets, 1500);
 }
 
-// Hook save into data mutations
-var _origSaveCandidate = saveCandidate;
-saveCandidate = function() { _origSaveCandidate(); scheduleSave(); };
-
-var _origConfirmDel = confirmDel;
-confirmDel = function() { _origConfirmDel(); scheduleSave(); };
-
-var _origMoveCandidate = moveCandidate;
-moveCandidate = function(id, stage) { _origMoveCandidate(id, stage); scheduleSave(); };
+// Patch save points
+var _sc = saveCandidate;
+saveCandidate = function(){ _sc(); _scheduleSave(); };
+var _cd = confirmDel;
+confirmDel = function(){ _cd(); _scheduleSave(); };
+var _mc = moveCandidate;
+moveCandidate = function(id,st){ _mc(id,st); _scheduleSave(); };
 
 // ── INIT ──
 renderHdrRight('funnel');
-// Ensure date filters are empty so ALL candidates show
-var dFromEl = document.getElementById('dFrom');
-var dToEl = document.getElementById('dTo');
-if (dFromEl) dFromEl.value = '';
-if (dToEl) dToEl.value = '';
+document.getElementById('dFrom').value = '';
+document.getElementById('dTo').value = '';
 renderAll();
-// Load from Google Sheets
-setTimeout(loadFromSheets, 500);
+setTimeout(loadFromSheets, 300);
 </script>
 </body>
 </html>
