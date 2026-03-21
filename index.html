@@ -53,7 +53,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .add-btn:hover{background:#818cf830}
 
 /* ── DATE BAR ── */
-.date-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r12);padding:11px 16px;margin-bottom:20px}
+.date-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r12);padding:11px 16px;margin-bottom:20px;overflow-x:auto}
 .date-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 .date-inputs{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .date-in{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r8);padding:5px 10px;color:var(--txt);font-family:'Onest',sans-serif;font-size:12px;outline:none;transition:border-color .2s;color-scheme:dark;min-width:0;width:100%;max-width:150px}
@@ -408,10 +408,11 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
   .tab{padding:8px 14px;font-size:12px}
 
   /* Date bar */
-  .date-bar{gap:8px;padding:10px 12px}
-  .quick-filters{gap:4px}
+  .date-bar{gap:6px;padding:10px 12px}
+  .quick-filters{gap:4px;flex-wrap:wrap}
   .qf-btn{padding:4px 9px;font-size:10px}
-  .date-in{min-width:110px;font-size:11px;padding:4px 8px}
+  .date-inputs{flex-wrap:nowrap;flex-shrink:0}
+  .date-in{width:120px;font-size:11px;padding:4px 8px;flex-shrink:1}
 
   /* Top stats - 2 columns on mobile */
   .top-stats{grid-template-columns:1fr 1fr;gap:8px}
@@ -752,21 +753,7 @@ let manual={
   invited:{hh:42,tg:28},
 };
 
-let candidates=[
-  {id:1, name:'Соколова Анна',      src:'hh',stage:'interview',phone:'+7 916 111 22 33',tg:'@sokolova',  dates:{interview:'2026-03-10',welcome:'',training:'',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:2, name:'Миронов Павел',      src:'tg',stage:'interview',phone:'+7 925 234 56 78',tg:'@mironov',   dates:{interview:'2026-03-11',welcome:'',training:'',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:3, name:'Герасимова Ирина',   src:'hh',stage:'interview',phone:'',               tg:'',           dates:{interview:'2026-03-12',welcome:'',training:'',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:4, name:'Быков Антон',        src:'hh',stage:'interview',phone:'+7 903 345 67 89',tg:'@bykov',     dates:{interview:'2026-03-13',welcome:'',training:'',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:5, name:'Чернов Игорь',       src:'tg',stage:'interview',phone:'',               tg:'@chernov',   dates:{interview:'2026-03-14',welcome:'',training:'',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:6, name:'Орлова Виктория',    src:'hh',stage:'welcome',  phone:'+7 912 456 78 90',tg:'',           dates:{interview:'2026-03-03',welcome:'2026-03-05',training:'',attest_hr:'',attest_chef:'',hired:''},comment:'Хорошее впечатление',resume:null},
-  {id:7, name:'Тихонов Михаил',     src:'hh',stage:'welcome',  phone:'',               tg:'@tikhonov',  dates:{interview:'2026-03-04',welcome:'2026-03-06',training:'',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:8, name:'Белова Надежда',     src:'tg',stage:'welcome',  phone:'+7 921 567 89 01',tg:'@belova',    dates:{interview:'2026-03-05',welcome:'2026-03-07',training:'',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:9, name:'Волкова Ксения',     src:'hh',stage:'training', phone:'+7 916 678 90 12',tg:'@volkova',   dates:{interview:'2026-02-24',welcome:'2026-02-26',training:'2026-02-28',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:10,name:'Кириллов Артём',     src:'hh',stage:'training', phone:'',               tg:'@kirillov',  dates:{interview:'2026-02-26',welcome:'2026-02-28',training:'2026-03-01',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:11,name:'Макаров Станислав',  src:'tg',stage:'training', phone:'+7 903 789 01 23',tg:'@makarov',   dates:{interview:'2026-02-27',welcome:'2026-03-01',training:'2026-03-02',attest_hr:'',attest_chef:'',hired:''},comment:'',resume:null},
-  {id:12,name:'Новикова Екатерина', src:'hh',stage:'hired',    phone:'+7 925 890 12 34',tg:'@novikova',  dates:{interview:'2026-02-10',welcome:'2026-02-13',training:'2026-02-16',attest_hr:'2026-02-18',attest_chef:'2026-02-19',hired:'2026-02-20'},comment:'Отличный сотрудник',resume:null},
-  {id:13,name:'Петрова Дарья',      src:'tg',stage:'hired',    phone:'+7 916 901 23 45',tg:'@petrova',   dates:{interview:'2026-02-12',welcome:'2026-02-15',training:'2026-02-18',attest_hr:'2026-02-20',attest_chef:'2026-02-21',hired:'2026-02-22'},comment:'',resume:null},
-];
+let candidates=[]
 let nextId=20,editId=null,delId=null,pendResume=null,activeSrc='all';
 
 // Analytics costs
