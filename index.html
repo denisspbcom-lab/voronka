@@ -373,8 +373,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
 /* drag and drop */
 .card{cursor:grab}
 .card:active{cursor:grabbing}
-.card-drag-handle{position:absolute;top:10px;right:38px;font-size:12px;color:var(--dim);opacity:0;transition:opacity .15s;pointer-events:none;line-height:1}
-.card:hover .card-drag-handle{opacity:1}
+.card-drag-handle{font-size:14px;color:var(--dim);transition:all .15s;line-height:1;cursor:grab;padding:2px 4px;flex-shrink:0;user-select:none}
+.card:hover .card-drag-handle{color:var(--muted)}
 .card.dragging{opacity:.4;transform:scale(.97)}
 .card.drag-ghost{opacity:.25;transform:scale(.95)}
 .col-body.drop-over{background:var(--accl);border-radius:var(--r8);outline:2px dashed var(--acc);outline-offset:-4px}
@@ -408,10 +408,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;fl
     <div id="syncBadge" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;letter-spacing:.05em;padding:3px 10px;border-radius:100px;border:1px solid #6b7a9960;color:#6b7a99;background:#6b7a9915;margin-top:5px;cursor:pointer" onclick="loadFromSheets()" title="Нажми для обновления">☁️ Облако</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto">
     <span id="syncStatus" class="sync-badge sync-idle">☁️ Облако</span>
-    <button onclick="loadFromSheets()" style="padding:5px 12px;border-radius:8px;border:1px solid var(--b2);background:var(--s2);color:var(--muted);font-family:'Onest',sans-serif;font-size:11px;cursor:pointer;transition:all .2s">🔄</button>
-    <div id="hdrRight"></div>
+    <button onclick="loadFromSheets()" style="padding:5px 10px;border-radius:8px;border:1px solid var(--b2);background:var(--s2);color:var(--muted);font-family:'Onest',sans-serif;font-size:13px;cursor:pointer;flex-shrink:0">🔄</button>
+    <div id="hdrRight" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"></div>
   </div>
 </header>
 
@@ -721,12 +721,14 @@ function renderHdrRight(tab){
         style="${activeSrc===s.id?`background:${s.color}20;border-color:${s.color};color:${s.color}`:''}">
         <span class="src-dot" style="background:${s.color}"></span>${s.label}
       </button>`).join('');
-    el.innerHTML=`<div class="src-pills">
-      <button class="src-pill ${activeSrc==='all'?'a-all':''}" data-src="all">Все</button>
-      ${pills}
-      <button class="src-pill src-pill-add" onclick="openAddSource()" title="Добавить источник">+ источник</button>
-    </div>
-    <button class="add-btn" onclick="openAdd()">+ Добавить</button>`;
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap">
+      <div class="src-pills" style="flex-wrap:nowrap">
+        <button class="src-pill ${activeSrc==='all'?'a-all':''}" data-src="all">Все</button>
+        ${pills}
+        <button class="src-pill src-pill-add" onclick="openAddSource()" title="Добавить источник">+ источник</button>
+      </div>
+      <button class="add-btn" onclick="openAdd()" style="flex-shrink:0;white-space:nowrap">+ Добавить</button>
+    </div>`;
     el.querySelectorAll('.src-pill[data-src]').forEach(b=>b.addEventListener('click',()=>{
       activeSrc=b.dataset.src;renderHdrRight('funnel');renderAll();
     }));
@@ -864,7 +866,7 @@ function renderKanban(){
     body.addEventListener('drop',e=>{
       e.preventDefault();
       body.classList.remove('drop-over');
-      const id=parseInt(e.dataTransfer.getData('text/plain'));
+      const id=Number(e.dataTransfer.getData('text/plain'));
       const newStage=body.dataset.stage;
       moveCandidate(id,newStage);
     });
@@ -887,8 +889,8 @@ function createCardEl(c){
   const d=sd?new Date(sd).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}):'';
   div.innerHTML=`
     ${ov?`<div class="card-alarm">⚠️ На обучении более 14 дней</div>`:''}
-    <div class="card-drag-handle">⠿</div>
     <div class="card-top">
+      <div class="card-drag-handle" title="Перетащи карточку">⠿</div>
       <div class="card-name">${c.name||'—'}</div>
       <div class="card-acts">
         <button class="cact e" title="Редактировать">✏️</button>
@@ -898,7 +900,7 @@ function createCardEl(c){
     <div class="card-meta">
       <span class="csrc-dyn" style="background:${srcColor(c.src)}20;border:1px solid ${srcColor(c.src)}60;color:${srcColor(c.src)}">${srcLabel(c.src)}</span>
       ${d?`<span class="cdate">📅 ${d}</span>`:''}
-      ${c.phone?`<span class="cphone">📞 ${c.phone}</span>`:''}
+      ${c.phone&&!String(c.phone).includes('ERROR')?`<span class="cphone">📞 ${c.phone}</span>`:''}
     </div>
     ${c.resume?`<div class="cresume">📎 ${c.resume.name}</div>`:''}`;
 
@@ -906,12 +908,12 @@ function createCardEl(c){
   div.querySelector('.cact.e').addEventListener('click',e=>{e.stopPropagation();openEdit(c.id);});
   div.querySelector('.cact.d').addEventListener('click',e=>{e.stopPropagation();askDel(c.id);});
   div.addEventListener('click',e=>{
-    if(!e.target.closest('.cact'))openEdit(c.id);
+    if(!e.target.closest('.cact') && !div.classList.contains('dragging'))openEdit(c.id);
   });
 
   // Desktop drag
   div.addEventListener('dragstart',e=>{
-    e.dataTransfer.setData('text/plain',c.id);
+    e.dataTransfer.setData('text/plain', String(c.id));
     e.dataTransfer.effectAllowed='move';
     div.classList.add('dragging');
     setTimeout(()=>div.classList.add('drag-ghost'),0);
@@ -963,7 +965,7 @@ function createCardEl(c){
 }
 
 function moveCandidate(id,newStage){
-  const c=candidates.find(x=>x.id===id);
+  const c=candidates.find(x=>Number(x.id)===Number(id));
   if(!c||c.stage===newStage)return;
   const now=new Date();const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   if(!c.dates)c.dates={interview:'',welcome:'',training:'',attest_hr:'',attest_chef:'',hired:''};
@@ -1010,7 +1012,7 @@ function cardHTML(c){
     <div class="card-meta">
       <span class="csrc-dyn" style="background:${srcColor(c.src)}20;border:1px solid ${srcColor(c.src)}60;color:${srcColor(c.src)}">${srcLabel(c.src)}</span>
       ${d?`<span class="cdate">📅 ${d}</span>`:''}
-      ${c.phone?`<span class="cphone">📞 ${c.phone}</span>`:''}
+      ${c.phone&&!String(c.phone).includes('ERROR')?`<span class="cphone">📞 ${c.phone}</span>`:''}
     </div>
     ${c.resume?`<div class="cresume">📎 ${c.resume.name}</div>`:''}
   </div>`;
@@ -1259,7 +1261,7 @@ function openAdd(){
   setTimeout(()=>document.getElementById('fName').focus(),100);
 }
 function openEdit(id){
-  const c=candidates.find(x=>x.id===id);if(!c)return;
+  const c=candidates.find(x=>Number(x.id)===Number(id));if(!c)return;
   editId=id;pendResume=c.resume||null;
   document.getElementById('modTitle').textContent='Редактировать';
   document.getElementById('fName').value=c.name||'';
@@ -1333,7 +1335,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 
 function askDel(id){
   delId=id;
-  const c=candidates.find(x=>x.id===id);
+  const c=candidates.find(x=>Number(x.id)===Number(id));
   document.getElementById('confMsg').textContent=`«${c?.name||'Кандидат'}» будет удалён. Это нельзя отменить.`;
   document.getElementById('confOv').classList.add('open');
 }
@@ -1369,8 +1371,9 @@ function loadFromSheets() {
         if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) { d = {}; } }
         return {
           id: Number(c.id) || (Date.now() + Math.random()),
-          name: c.name || '', src: c.src || 'hh', stage: c.stage || 'interview',
-          phone: c.phone || '', tg: c.tg || '',
+          name: String(c.name || ''), src: String(c.src || 'hh'), stage: String(c.stage || 'interview'),
+          phone: (c.phone && String(c.phone).indexOf('ERROR')===-1 && String(c.phone) !== '0') ? String(c.phone) : '',
+          tg: (c.tg && String(c.tg).indexOf('ERROR')===-1) ? String(c.tg) : '',
           dates: (d && typeof d === 'object') ? d : {},
           comment: c.comment || '', resume: null
         };
@@ -1406,8 +1409,13 @@ function _scheduleSave() {
 
 // ── INIT ──
 renderHdrRight('funnel');
-document.getElementById('dFrom').value = '';
-document.getElementById('dTo').value = '';
+// Clear ALL date filters on load
+var _df = document.getElementById('dFrom');
+var _dt = document.getElementById('dTo');
+if(_df) _df.value = '';
+if(_dt) _dt.value = '';
+// Remove any active quick filter highlight
+document.querySelectorAll('.qf-btn').forEach(function(b){b.classList.remove('qf-active');});
 renderAll();
 setTimeout(loadFromSheets, 300);
 </script>
