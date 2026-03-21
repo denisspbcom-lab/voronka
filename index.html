@@ -41,7 +41,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .tab-content.active{display:block}
 
 /* ── SOURCE PILLS ── */
-.src-pills{display:flex;gap:5px}
+.src-pills{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .src-pill{padding:6px 14px;border-radius:100px;border:1px solid var(--b1);background:var(--s2);color:var(--muted);font-family:'Onest',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
 .src-pill:hover{border-color:var(--b3);color:var(--txt)}
 .src-pill.a-all{border-color:var(--acc);background:var(--accl);color:var(--acc2)}
@@ -397,12 +397,14 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
   .app{padding:16px 12px 60px}
 
   /* Header */
-  header{gap:10px;flex-wrap:wrap}
-  .brand h1{font-size:16px}
-  .brand-icon{width:34px;height:34px;font-size:16px}
+  header{gap:8px;flex-wrap:nowrap;align-items:center}
+  .brand{flex-shrink:0}
+  .brand h1{font-size:14px}
+  .brand-icon{width:32px;height:32px;font-size:15px}
+  .brand p{display:none}
 
   /* Sync + controls row */
-  .sync-badge{font-size:10px;padding:4px 8px}
+  .sync-badge{font-size:10px;padding:4px 8px;flex-shrink:0}
 
   /* Tabs */
   .tab{padding:8px 14px;font-size:12px}
@@ -498,10 +500,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
     <div id="syncBadge" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;letter-spacing:.05em;padding:3px 10px;border-radius:100px;border:1px solid #6b7a9960;color:#6b7a99;background:#6b7a9915;margin-top:5px;cursor:pointer" onclick="loadFromSheets()" title="Нажми для обновления">☁️ Облако</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto">
-    <span id="syncStatus" class="sync-badge sync-idle">☁️ Облако</span>
-    <button onclick="loadFromSheets()" style="padding:5px 10px;border-radius:8px;border:1px solid var(--b2);background:var(--s2);color:var(--muted);font-family:'Onest',sans-serif;font-size:13px;cursor:pointer;flex-shrink:0">🔄</button>
-    <div id="hdrRight" style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap"></div>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
+    <span id="syncStatus" class="sync-badge sync-idle" style="flex-shrink:0">☁️ Облако</span>
+    <button onclick="loadFromSheets()" style="padding:5px 10px;border-radius:8px;border:1px solid var(--b2);background:var(--s2);color:var(--muted);font-family:'Onest',sans-serif;font-size:13px;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄</button>
+    <div id="hdrRight" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;flex-shrink:0"></div>
   </div>
 </header>
 
@@ -1249,18 +1251,26 @@ function renderConversion(){
   const stageIds=['interview','welcome','training','attest_hr','attest_chef','hired'];
   const stageLabels=['Собеседование','Велком день','Обучение','Аттест. HR','Аттест. шефа','Вышли'];
 
+  var stageOrder=['interview','welcome','training','attest_hr','attest_chef','hired'];
   function everAt(src,st){
-    return fi.filter(c=>c.src===src&&c.dates&&c.dates[st]).length;
+    var stIdx=stageOrder.indexOf(st);
+    return fi.filter(function(c){
+      if(src!=='all'&&c.src!==src)return false;
+      // Has a date for this stage (was here at some point)
+      if(c.dates&&c.dates[st])return true;
+      // Or is currently at a later stage (passed through this one)
+      var curIdx=stageOrder.indexOf(c.stage);
+      return curIdx>stIdx;
+    }).length;
   }
 
   function buildChain(src, appCount){
-    // node 0 = откликнулись, nodes 1-6 = stages
-    const nodes=[{cnt:appCount,lbl:'Откликнулись',pct:null,isStart:true}];
-    stageIds.forEach((st,i)=>{
-      const cnt=everAt(src,st);
-      const base=i===0?appCount:everAt(src,stageIds[i-1]);
-      const p=base?Math.round(cnt/base*100):0;
-      nodes.push({cnt,lbl:stageLabels[i],pct:p,cls:p>=50?'good':p>=20?'mid':'low'});
+    var nodes=[{cnt:appCount,lbl:'Откликнулись',pct:null,isStart:true}];
+    stageIds.forEach(function(st,i){
+      var cnt=everAt(src,st);
+      var base=i===0?appCount:everAt(src,stageIds[i-1]);
+      var p=base?Math.round(cnt/base*100):0;
+      nodes.push({cnt:cnt,lbl:stageLabels[i],pct:p,cls:p>=50?'good':p>=20?'mid':'low'});
     });
     return nodes;
   }
