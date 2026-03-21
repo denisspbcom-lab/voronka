@@ -1507,6 +1507,14 @@ if(_dt) _dt.value = '';
 document.querySelectorAll('.qf-btn').forEach(function(b){b.classList.remove('qf-active');});
 renderAll();
 setTimeout(loadFromSheets, 300);
+
+// Auto-refresh every 30 seconds
+setInterval(function() {
+  // Only reload if not currently saving
+  if (syncStatus !== 'saving') {
+    loadFromSheets();
+  }
+}, 30000);
 </script>
 </body>
 </html>
