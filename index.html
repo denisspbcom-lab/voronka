@@ -195,7 +195,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .an-sc.tot{background:linear-gradient(135deg,#fbbf2410,var(--s2))}
 .an-sc.cph{background:linear-gradient(135deg,#34d39910,var(--s2))}
 .an-sc-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.an-sc-val{font-family:'Unbounded',sans-serif;font-size:22px;font-weight:700;line-height:1;margin-bottom:4px}
+.an-sc-val{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:700;line-height:1;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .an-sc.dir .an-sc-val{color:var(--hh)}
 .an-sc.ind .an-sc-val{color:var(--acc2)}
 .an-sc.tot .an-sc-val{color:var(--ylw)}
@@ -215,7 +215,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .cost-row{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r8);padding:8px 10px}
 .cost-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .cost-dot.hh{background:var(--hh)}.cost-dot.tg{background:var(--tg)}.cost-dot.acc{background:var(--acc)}
-.cost-name{flex:1;background:transparent;border:none;color:var(--txt);font-family:'Onest',sans-serif;font-size:12px;outline:none;min-width:0}
+.cost-name{flex:1;background:transparent;border:none;color:var(--txt);font-family:'Onest',sans-serif;font-size:12px;outline:none;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .cost-name::placeholder{color:var(--dim)}
 .cost-src{background:var(--s3);border:1px solid var(--b2);border-radius:5px;color:var(--muted);font-family:'Onest',sans-serif;font-size:10px;padding:3px 6px;outline:none;cursor:pointer}
 .cost-src option{background:var(--s3)}
@@ -227,13 +227,13 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .add-cost-btn{width:100%;background:transparent;border:1px dashed var(--b2);border-radius:var(--r8);color:var(--muted);font-family:'Onest',sans-serif;font-size:11px;padding:7px;cursor:pointer;transition:all .2s}
 .add-cost-btn:hover{border-color:var(--acc);color:var(--acc2)}
 
-.cost-total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s3);border-radius:var(--r8);margin-top:10px;font-size:12px}
+.cost-total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s3);border-radius:var(--r8);margin-top:10px;font-size:12px;gap:8px}
 .cost-total-lbl{color:var(--muted);font-weight:500}
-.cost-total-val{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:700}
+.cost-total-val{font-family:'Unbounded',sans-serif;font-size:14px;font-weight:700;flex-shrink:0;white-space:nowrap}
 
-.cph-table{margin-top:20px;padding-top:18px;border-top:1px solid var(--b1)}
+.cph-table{margin-top:20px;padding-top:18px;border-top:1px solid var(--b1);overflow-x:auto;-webkit-overflow-scrolling:touch}
 .cph-title{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
-.an-table{width:100%;border-collapse:collapse;font-size:11px}
+.an-table{width:100%;border-collapse:collapse;font-size:11px;min-width:380px}
 .an-table th{color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:9px;padding:6px 8px;text-align:left;border-bottom:1px solid var(--b1)}
 .an-table td{padding:8px;border-bottom:1px solid var(--b1);color:var(--txt);vertical-align:middle}
 .an-table tbody tr:last-child td{border-bottom:none}
@@ -448,10 +448,14 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
   .an-summary{grid-template-columns:1fr 1fr;gap:8px}
   .an-sc{padding:12px 14px}
   .an-sc-val{font-size:18px}
-  .an-panel{padding:14px}
-  .cost-row{flex-wrap:wrap;gap:4px}
-  .cost-name{min-width:100%;order:-1}
-  .cost-amt{width:70px}
+  .an-panel{padding:12px;overflow:hidden}
+  .cost-row{flex-wrap:nowrap;gap:4px;overflow:hidden}
+  .cost-name{flex:1;min-width:0;font-size:11px}
+  .cost-amt{width:72px;flex-shrink:0}
+  .cost-src{flex-shrink:0}
+  .cost-dot{flex-shrink:0}
+  .cost-unit{flex-shrink:0}
+  .cost-del{flex-shrink:0}
 
   /* Conversion chain */
   .cv-chain{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -473,7 +477,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 @media(max-width:400px){
   .kanban{grid-template-columns:1fr}
   .top-stats{grid-template-columns:1fr}
-  .an-summary{grid-template-columns:1fr}
+  .an-summary{grid-template-columns:1fr 1fr}
   .col-badge{font-size:10px;padding:2px 6px}
 }
 </style>
@@ -1170,16 +1174,16 @@ function renderCostRows(){
         <option value="tg" ${r.src==='tg'?'selected':''}>TG</option>
       </select>
       <input class="cost-amt" type="number" min="0" value="${r.amount}" onchange="costs.direct.find(x=>x.id===${r.id}).amount=+this.value;updateCostTotals();renderAnalyticsSummary()">
-      <span class="cost-unit">₽</span>
-      <button class="cost-del" onclick="costs.direct=costs.direct.filter(x=>x.id!==${r.id});renderCostRows();updateCostTotals();renderAnalyticsSummary()">✕</button>
+      <span class="cost-unit" style="flex-shrink:0">₽</span>
+      <button class="cost-del" onclick="costs.direct=costs.direct.filter(x=>x.id!==${r.id});renderCostRows();updateCostTotals();renderAnalyticsSummary()" style="flex-shrink:0">✕</button>
     </div>`).join('');
   // Indirect (per employee)
   document.getElementById('indirectRows').innerHTML=costs.indirect.map(r=>`
     <div class="cost-row">
       <div class="cost-dot acc"></div>
       <input class="cost-name" value="${r.label}" placeholder="Имя сотрудника" onchange="costs.indirect.find(x=>x.id===${r.id}).label=this.value;updateCostTotals()">
-      <input class="cost-amt" type="number" min="0" value="${r.amount}" style="margin-left:auto" onchange="costs.indirect.find(x=>x.id===${r.id}).amount=+this.value;updateCostTotals();renderAnalyticsSummary()">
-      <span class="cost-unit">₽</span>
+      <input class="cost-amt" type="number" min="0" value="${r.amount}" style="width:80px;flex-shrink:0" onchange="costs.indirect.find(x=>x.id===${r.id}).amount=+this.value;updateCostTotals();renderAnalyticsSummary()">
+      <span class="cost-unit" style="flex-shrink:0">₽</span>
       <button class="cost-del" onclick="costs.indirect=costs.indirect.filter(x=>x.id!==${r.id});renderCostRows();updateCostTotals();renderAnalyticsSummary()">✕</button>
     </div>`).join('');
   updateCostTotals();
