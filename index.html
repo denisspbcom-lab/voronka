@@ -18,16 +18,34 @@
   --r8:8px;--r12:12px;--r16:16px;
 }
 body.light{
-  --bg:#f0f2f7;--s1:#ffffff;--s2:#f7f8fc;--s3:#eef0f6;
-  --b1:#dde0eb;--b2:#c8ccda;--b3:#b0b5c8;
-  --txt:#1a1d2e;--muted:#6b7080;--dim:#a0a4b8;
-  --accl:#818cf815;--hhl:#ff6b3515;--tgl:#22d3ee15;
+  --bg:#f5f6fa;
+  --s1:#ffffff;
+  --s2:#f0f1f7;
+  --s3:#e8eaf2;
+  --b1:#e0e3ef;
+  --b2:#cdd0e0;
+  --b3:#b8bcd0;
+  --hh:#e55a20;--hh2:#ff6b35;--hhl:#ff6b3518;
+  --tg:#0ea5c7;--tg2:#22d3ee;--tgl:#22d3ee18;
+  --txt:#1e2035;
+  --muted:#5a6080;
+  --dim:#9097b8;
+  --acc:#5b6af0;--acc2:#6b7cf0;--accl:#5b6af012;
+  --grn:#16a968;--red:#e03535;--ylw:#d97706;
+  --r8:8px;--r12:12px;--r16:16px;
 }
-body.light .glow-a,body.light .glow-b{opacity:0}
-body.light .card{box-shadow:0 1px 4px #0000000f}
-body.light .column{box-shadow:0 1px 3px #0000000a}
+body.light body::after{opacity:.015}
+body.light .glow-a,body.light .glow-b{display:none}
+body.light .brand h1{background:linear-gradient(135deg,#1e2035 30%,#5b6af0);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+body.light .card{box-shadow:0 1px 6px #1e203514;border-color:var(--b1)}
+body.light .card:hover{box-shadow:0 4px 16px #1e203520}
+body.light .column{box-shadow:0 1px 4px #1e20350a}
 body.light .tabs{border-color:var(--b1)}
-body.light .tab.active{background:var(--s1);border-color:var(--b1);border-bottom-color:var(--s1)}
+body.light .tab.active{background:#fff;border-color:var(--b1);border-bottom-color:#fff}
+body.light .modal{box-shadow:0 8px 40px #1e203530}
+body.light #move-toast{box-shadow:0 4px 20px #1e203520}
+body.light .sync-badge{border-color:var(--b2)}
+body.light .tstat,.body.light .an-sc,.body.light .an-panel{box-shadow:0 1px 4px #1e20350a}
 body{font-family:'Onest',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
 body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
 .glow-a{position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,#818cf808 0%,transparent 70%);pointer-events:none;z-index:0}
@@ -681,7 +699,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
         <div id="rZone" class="rzone">
           <input type="file" id="fResume" accept=".pdf,.doc,.docx" onchange="handleResume(this)">
           <div class="rzone-ico">📄</div>
-          <div class="rzone-txt"><strong>Выбери файл</strong> или перетащи<br>PDF, DOC, DOCX</div>
+          <div class="rzone-txt"><strong>Выбери файл</strong> или перетащи<br>PDF, DOC, DOCX<br><span style="font-size:9px;color:var(--dim)">Хранится локально в сессии</span></div>
         </div>
         <div id="rAttached" style="display:none" class="rattached">
           <span>📎</span><span class="rname" id="rName"></span>
@@ -816,6 +834,17 @@ function toggleTheme() {
     }
   } catch(e){}
 })();
+
+function openResume(id) {
+  var c = candidates.find(function(x){ return x.id===id; });
+  if (!c || !c.resume) return;
+  if (c.resume.dataUrl) {
+    var a = document.createElement('a');
+    a.href = c.resume.dataUrl;
+    a.download = c.resume.name;
+    a.click();
+  }
+}
 
 function formatPhone(input) {
   var v = input.value.replace(/\D/g, '');
@@ -1029,7 +1058,7 @@ function createCardEl(c){
       ${d?`<span class="cdate">📅 ${d}</span>`:''}
       ${c.phone&&!String(c.phone).includes('ERROR')?`<span class="cphone">📞 ${c.phone}</span>`:''}
     </div>
-    ${c.resume?`<div class="cresume">📎 ${c.resume.name}</div>`:''}`;
+    ${c.resume?`<div class="cresume" onclick="event.stopPropagation();openResume(${c.id})" title="Открыть резюме">📎 ${c.resume.name}</div>`:''}`;
 
   // Edit / Delete buttons (prevent drag)
   div.querySelector('.cact.e').addEventListener('click',e=>{e.stopPropagation();openEdit(c.id);});
@@ -1141,7 +1170,7 @@ function cardHTML(c){
       ${d?`<span class="cdate">📅 ${d}</span>`:''}
       ${c.phone&&!String(c.phone).includes('ERROR')?`<span class="cphone">📞 ${c.phone}</span>`:''}
     </div>
-    ${c.resume?`<div class="cresume">📎 ${c.resume.name}</div>`:''}
+    ${c.resume?`<div class="cresume" onclick="event.stopPropagation();openResume(${c.id})" title="Открыть резюме">📎 ${c.resume.name}</div>`:''}
   </div>`;
 }
 
@@ -1424,6 +1453,7 @@ function closeModal(){document.getElementById('modOv').classList.remove('open');
 function saveCandidate(){
   const name=document.getElementById('fName').value.trim();
   if(!name){document.getElementById('fName').focus();return;}
+  formatPhone(document.getElementById('fPhone'));
   const obj={name,phone:document.getElementById('fPhone').value.trim(),tg:document.getElementById('fTg').value.trim(),
     src:document.getElementById('fSrc').value,stage:document.getElementById('fStage').value,
     dates:{
