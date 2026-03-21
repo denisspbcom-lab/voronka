@@ -17,6 +17,17 @@
   --grn:#34d399;--red:#f87171;--ylw:#fbbf24;
   --r8:8px;--r12:12px;--r16:16px;
 }
+body.light{
+  --bg:#f0f2f7;--s1:#ffffff;--s2:#f7f8fc;--s3:#eef0f6;
+  --b1:#dde0eb;--b2:#c8ccda;--b3:#b0b5c8;
+  --txt:#1a1d2e;--muted:#6b7080;--dim:#a0a4b8;
+  --accl:#818cf815;--hhl:#ff6b3515;--tgl:#22d3ee15;
+}
+body.light .glow-a,body.light .glow-b{opacity:0}
+body.light .card{box-shadow:0 1px 4px #0000000f}
+body.light .column{box-shadow:0 1px 3px #0000000a}
+body.light .tabs{border-color:var(--b1)}
+body.light .tab.active{background:var(--s1);border-color:var(--b1);border-bottom-color:var(--s1)}
 body{font-family:'Onest',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
 body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
 .glow-a{position:fixed;top:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,#818cf808 0%,transparent 70%);pointer-events:none;z-index:0}
@@ -53,7 +64,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .add-btn:hover{background:#818cf830}
 
 /* ── DATE BAR ── */
-.date-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r12);padding:11px 16px;margin-bottom:20px;overflow-x:auto}
+.date-bar{display:flex;flex-direction:column;gap:8px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r12);padding:12px 16px;margin-bottom:20px}
+.date-row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.date-row2{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .date-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 .date-inputs{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .date-in{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r8);padding:5px 10px;color:var(--txt);font-family:'Onest',sans-serif;font-size:12px;outline:none;transition:border-color .2s;color-scheme:dark;min-width:0;width:100%;max-width:150px}
@@ -503,6 +516,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-left:auto;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px">
     <span id="syncStatus" class="sync-badge sync-idle" style="flex-shrink:0">☁️ Облако</span>
     <button onclick="loadFromSheets()" style="padding:5px 10px;border-radius:8px;border:1px solid var(--b2);background:var(--s2);color:var(--muted);font-family:'Onest',sans-serif;font-size:13px;cursor:pointer;flex-shrink:0;white-space:nowrap">🔄</button>
+    <button id="themeBtn" onclick="toggleTheme()" style="padding:5px 10px;border-radius:8px;border:1px solid var(--b2);background:var(--s2);color:var(--muted);font-family:'Onest',sans-serif;font-size:13px;cursor:pointer;flex-shrink:0">🌙</button>
     <div id="hdrRight" style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;flex-shrink:0"></div>
   </div>
 </header>
@@ -516,20 +530,22 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 <!-- ══ TAB: FUNNEL ══ -->
 <div class="tab-content active" id="tab-funnel">
   <div class="date-bar">
-    <span class="date-lbl">📅 Период</span>
-    <div class="quick-filters">
-      <button class="qf-btn" onclick="setQuickDate('today','dFrom','dTo',renderAll)">Сегодня</button>
-      <button class="qf-btn" onclick="setQuickDate('week','dFrom','dTo',renderAll)">Неделя</button>
-      <button class="qf-btn" onclick="setQuickDate('month','dFrom','dTo',renderAll)">С начала месяца</button>
-      <button class="qf-btn" onclick="setQuickDate('lastmonth','dFrom','dTo',renderAll)">Прошлый месяц</button>
+    <div class="date-row1">
+      <span class="date-lbl">📅 Период</span>
+      <div class="quick-filters">
+        <button class="qf-btn" onclick="setQuickDate('today','dFrom','dTo',renderAll)">Сегодня</button>
+        <button class="qf-btn" onclick="setQuickDate('week','dFrom','dTo',renderAll)">Неделя</button>
+        <button class="qf-btn" onclick="setQuickDate('month','dFrom','dTo',renderAll)">С начала месяца</button>
+        <button class="qf-btn" onclick="setQuickDate('lastmonth','dFrom','dTo',renderAll)">Прошлый месяц</button>
+      </div>
     </div>
-    <div class="date-inputs">
+    <div class="date-row2">
       <input type="date" class="date-in" id="dFrom" onchange="clearQF('funnel');renderAll()">
       <span class="date-sep">—</span>
       <input type="date" class="date-in" id="dTo" onchange="clearQF('funnel');renderAll()">
+      <span class="date-clear" onclick="clearDates()">Сбросить</span>
+      <span class="date-res" id="dRes"></span>
     </div>
-    <span class="date-clear" onclick="clearDates()">Сбросить</span>
-    <span class="date-res" id="dRes"></span>
   </div>
   <div class="top-stats" id="topStats"></div>
   <div class="legend">
@@ -612,7 +628,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
     <div class="m-body">
       <div class="field"><label>ФИО</label><input type="text" id="fName" placeholder="Иванова Мария Сергеевна"></div>
       <div class="f2">
-        <div class="field"><label>Телефон</label><input type="tel" id="fPhone" placeholder="+7 999 000 00 00"></div>
+        <div class="field"><label>Телефон</label><input type="tel" id="fPhone" placeholder="+7 999 000 00 00" oninput="formatPhone(this)" onblur="formatPhone(this)"></div>
         <div class="field"><label>Telegram</label><input type="text" id="fTg" placeholder="@username"></div>
       </div>
       <div class="f2">
@@ -781,6 +797,39 @@ function switchTab(name){
   if(name==='analytics')renderAnalytics();
 }
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+
+function toggleTheme() {
+  var isLight = document.body.classList.toggle('light');
+  document.getElementById('themeBtn').textContent = isLight ? '🌚' : '🌙';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+// Restore theme on load
+(function(){
+  try {
+    if(localStorage.getItem('theme')==='light'){
+      document.body.classList.add('light');
+      // btn will be set after DOM loads
+      window.addEventListener('DOMContentLoaded',function(){
+        var b=document.getElementById('themeBtn');
+        if(b)b.textContent='🌚';
+      });
+    }
+  } catch(e){}
+})();
+
+function formatPhone(input) {
+  var v = input.value.replace(/\D/g, '');
+  if (!v) return;
+  if (v.startsWith('8')) v = '7' + v.slice(1);
+  if (!v.startsWith('7')) v = '7' + v;
+  v = v.slice(0, 11);
+  var fmt = '+7';
+  if (v.length > 1) fmt += ' ' + v.slice(1, 4);
+  if (v.length > 4) fmt += ' ' + v.slice(4, 7);
+  if (v.length > 7) fmt += ' ' + v.slice(7, 9);
+  if (v.length > 9) fmt += ' ' + v.slice(9, 11);
+  input.value = fmt;
+}
 
 function srcColor(id){
   const s=sources.find(x=>x.id===id);
@@ -1458,7 +1507,21 @@ function loadFromSheets() {
         return {
           id: Number(c.id) || (Date.now() + Math.random()),
           name: String(c.name || ''), src: String(c.src || 'hh'), stage: String(c.stage || 'interview'),
-          phone: (c.phone && String(c.phone).indexOf('ERROR')===-1 && String(c.phone) !== '0') ? String(c.phone) : '',
+          phone: (function(){
+            var p = String(c.phone||'');
+            if(!p||p==='0'||p.indexOf('ERROR')>-1) return '';
+            var digits = p.replace(/\D/g,'');
+            if(!digits) return '';
+            if(digits.startsWith('8')) digits='7'+digits.slice(1);
+            if(!digits.startsWith('7')) digits='7'+digits;
+            digits=digits.slice(0,11);
+            var f='+7';
+            if(digits.length>1)f+=' '+digits.slice(1,4);
+            if(digits.length>4)f+=' '+digits.slice(4,7);
+            if(digits.length>7)f+=' '+digits.slice(7,9);
+            if(digits.length>9)f+=' '+digits.slice(9,11);
+            return f;
+          })(),
           tg: (c.tg && String(c.tg).indexOf('ERROR')===-1) ? String(c.tg) : '',
           dates: (d && typeof d === 'object') ? d : {},
           comment: c.comment || '', resume: null
